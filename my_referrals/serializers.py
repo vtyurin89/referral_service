@@ -1,57 +1,42 @@
-from django.contrib.auth import authenticate
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework.serializers import ModelSerializer, Serializer, CharField
-from datetime import datetime
+from django.core.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.serializers import ModelSerializer
+from django.utils import timezone
+from rest_framework.serializers import CharField
 
 from .models import *
 
 
 class UserSerializer(ModelSerializer):
+    referral_code = CharField(max_length=255, required=False, allow_blank=True)
+
     class Meta:
         model = User
-        fields = ['username', 'password']
+        fields = ['username', 'password', "email", "referral_code"]
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        referral_code = validated_data.pop('referral_code', None)
+        email = validated_data.pop('email', None)
         referrer = None
 
-        # checking referral code
-        if validated_data.get('referral_code', None):
-            referral_code = validated_data.pop('referral_code')
+        if referral_code:
             try:
                 check_code = ReferralCode.objects.get(code=referral_code)
-                if check_code.expiration_date > datetime.now():
+                if check_code.expiration_date > timezone.now():
                     referrer = check_code.user
-            except ObjectDoesNotExist:
-                pass
+                else:
+                    raise ValidationError("Referral code has expired", code=status.HTTP_400_BAD_REQUEST)
+            except ReferralCode.DoesNotExist:
+                raise ValidationError("Referral code does not exist", code=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.create(**validated_data)
-        user.set_password(password)
+        user = User.objects.create_user(**validated_data, password=password, email=email)
         if referrer:
             user.referrer = referrer
+            user.save()
 
-        user.save()
         return user
-
-
-class UserLoginSerializer(Serializer):
-    username = CharField(max_length=255)
-    password = CharField()
-
-    def validate(self, data):
-        username = data.get('username')
-        password = data.get('password')
-
-        if username and password:
-            user = authenticate(request=self.context.get('request'),
-                                username=username, password=password)
-            if not user:
-                raise ValidationError("Unable to log in with provided credentials!", code=401)
-        else:
-            raise ValidationError("Please provide both username and password!", code=401)
-        data['user'] = user
-        return data
 
 
 class ReferralCodeSerializer(ModelSerializer):
