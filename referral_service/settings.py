@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'my_referrals.apps.MyReferralsConfig',
     'rest_framework_simplejwt',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [

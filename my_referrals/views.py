@@ -15,6 +15,10 @@ from .models import *
 
 
 class UserRegisterView(APIView):
+    """
+    Takes new user's username, password and (optionally) email and referral code
+    and creates a new user object.
+    """
     def post(self, request):
         data = request.data
 
@@ -34,6 +38,9 @@ class UserRegisterView(APIView):
 
 
 class UserLoginView(APIView):
+    """
+    Takes user's username and password and returns JWT access token and refresh token.
+    """
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -52,6 +59,12 @@ class UserLoginView(APIView):
 
 
 class ReferralCodeView(APIView):
+    """
+    Requires user's JWT access token.
+    GET request: returns user's referral code.
+    POST request: creates a new referral code (deletes old one if it existed).
+    DELETE request: deletes user's referral code.
+    """
     permission_classes = [IsAuthenticated]
 
     def get_code_object(self, request):
@@ -87,6 +100,11 @@ class ReferralCodeView(APIView):
 
 
 class ReferralCodeByEmailView(APIView):
+    """
+    Requires user's JWT access token.
+    GET request: returns referral code of the user whose email was in the URL
+    (if the user has it).
+    """
     permission_classes = [IsAuthenticated]
 
     def get_object(self, email):
@@ -114,6 +132,10 @@ class ReferralCodeByEmailView(APIView):
 
 
 class UserReferralListView(APIView):
+    """
+    Requires user's JWT access token.
+    GET request: takes pk from the url and returns a list of referrals of corresponding user.
+    """
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
