@@ -13,8 +13,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from .config import SECRET_KEY, MYSQL_PASSWORD
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,11 +20,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = os.environ.get('SECRET_KEY', '')
-SECRET_KEY = SECRET_KEY
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -85,9 +83,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'referral_service',
         'USER': 'root',
-        # 'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
-        'PASSWORD': MYSQL_PASSWORD,
-        # 'HOST': 'mysql_db',
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {

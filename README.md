@@ -15,6 +15,7 @@
 * $ cd referral_service
 * $ pip install --user pipenv
 * Установите переменные окружения или задайте переменные SECRET_KEY и MYSQL_PASSWORD в settings.py.
+* Создайте базу данных "referral_service" в MySQL (CREATE DATABASE referral_service;)
 * $ python manage.py makemigrations
 * $ python manage.py migrate
 
