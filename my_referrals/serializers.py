@@ -13,7 +13,7 @@ class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'password', "email", "referral_code"]
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {'email': {'write_only': True}, 'password': {'write_only': True}}
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -29,7 +29,7 @@ class UserSerializer(ModelSerializer):
                 else:
                     raise ValidationError("Referral code has expired", code=status.HTTP_400_BAD_REQUEST)
             except ReferralCode.DoesNotExist:
-                raise ValidationError("Referral code does not exist", code=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError("This referral code does not exist", code=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.create_user(**validated_data, password=password, email=email)
         if referrer:

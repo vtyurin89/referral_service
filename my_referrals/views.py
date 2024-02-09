@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.core.validators import validate_email
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError, AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
@@ -88,25 +89,25 @@ class ReferralCodeView(APIView):
 class ReferralCodeByEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_code_object(self, email):
+    def get_object(self, email):
         try:
             return ReferralCode.objects.get(user__email=email)
         except ReferralCode.DoesNotExist:
             return None
 
-    def get(self, request):
-        email = request.query_params.get('email')
+    def get(self, request, email):
         if not email:
             return Response({"error": "Email address is required!"}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             validate_email(email)
         except ValidationError:
             return Response({"error": "Invalid email address!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        referral_code = self.get_code_object(email)
+        referral_code = self.get_object(email)
         if not referral_code:
             return Response({"error": "Referral code not found for the given email!"}, status=status.HTTP_404_NOT_FOUND)
+        if referral_code.expiration_date < timezone.now():
+            return Response({"error": "This user's referral code has expired!"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ReferralCodeSerializer(referral_code)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -115,14 +116,14 @@ class ReferralCodeByEmailView(APIView):
 class UserReferralListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_referrer_object(self, pk):
+    def get_object(self, pk):
         try:
             return User.objects.get(pk=pk)
         except User.DoesNotExist:
             raise NotFound("User not found.")
 
-    def get(self, request, pk):
-        referrer = self.get_referrer_object(pk)
+    def get(self, request, pk, format=None):
+        referrer = self.get_object(pk)
         referrals = User.objects.filter(referrer=referrer)
         serializer = UserSerializer(referrals, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
